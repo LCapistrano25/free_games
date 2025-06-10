@@ -11,39 +11,59 @@ class TimelineScene extends StatefulWidget {
 }
 
 class _TimelineSceneState extends State<TimelineScene> {
+  final String? apiKey = 'aa70995cc7274ac099fb0dce4eb4f1e7';
+  final ScrollController _scrollController = ScrollController();
+
   int statusCode = 0;
   int currentPage = 1;
   bool isLoading = false;
   bool isLoadingMore = false;
-  List<Games> games = [];
   String searchQuery = '';
-  final ScrollController _scrollController = ScrollController();
-  final String? apiKey = 'aa70995cc7274ac099fb0dce4eb4f1e7';
+  List<Games> games = [];
 
   @override
   void initState() {
     super.initState();
-    fetchGames();
-    _scrollController.addListener(_onScroll);
+    _fetchGames();
+    _scrollController.addListener(_handleScroll);
   }
 
-  void _onScroll() {
+  void _handleScroll() {
     if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 && !isLoadingMore) {
-      loadMoreGames();
+      _loadMoreGames();
     }
   }
 
-  void fetchGames() async {
+  Future<void> _fetchGames({String query = '', int page = 1}) async {
+    final isNewSearch = page == 1;
+
     setState(() {
-      isLoading = true;
-      currentPage = 1;
+      if (isNewSearch) {
+        isLoading = true;
+        currentPage = 1;
+        searchQuery = query;
+      } else {
+        isLoadingMore = true;
+      }
     });
 
     try {
-      var response = await GamesServices.fetchData(apiKey!, pageSize: 20, page: 1);
+      final response = await GamesServices.fetchData(apiKey!, pageSize: 20, query: query, page: page);
+      final int code = (response.length > 1 && response[1] is int) ? response[1] as int : 500;
+
       setState(() {
-        games = response[0] as List<Games>;
-        statusCode = (response.length > 1 && response[1] is int) ? response[1] as int : 500;
+        statusCode = code;
+        if (code == 200) {
+          final newGames = response[0] as List<Games>;
+          if (isNewSearch) {
+            games = newGames;
+          } else {
+            games.addAll(newGames);
+            currentPage = page;
+          }
+        } else {
+          games = [];
+        }
       });
     } catch (e) {
       debugPrint('Erro ao buscar jogos: $e');
@@ -54,97 +74,34 @@ class _TimelineSceneState extends State<TimelineScene> {
     } finally {
       setState(() {
         isLoading = false;
-      });
-    }
-  }
-
-  void searchGames(String query) async {
-    setState(() {
-      isLoading = true;
-      searchQuery = query;
-      currentPage = 1;
-    });
-
-    try {
-      var response = await GamesServices.fetchData(apiKey!, pageSize: 20, query: query, page: 1);
-      setState(() {
-        games = response[0] as List<Games>;
-        statusCode = (response.length > 1 && response[1] is int) ? response[1] as int : 500;
-      });
-    } catch (e) {
-      debugPrint('Erro na busca: $e');
-      setState(() {
-        games = [];
-        statusCode = 500;
-      });
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  void loadMoreGames() async {
-    setState(() {
-      isLoadingMore = true;
-    });
-
-    int nextPage = currentPage + 1;
-
-    try {
-      var response = await GamesServices.fetchData(
-        apiKey!,
-        pageSize: 20,
-        query: searchQuery,
-        page: nextPage,
-      );
-
-      final int responseCode = (response.length > 1 && response[1] is int) ? response[1] as int : 500;
-
-      if (responseCode == 200) {
-        setState(() {
-          games.addAll(response[0] as List<Games>);
-          currentPage = nextPage;
-        });
-      }
-    } catch (e) {
-      debugPrint('Erro ao carregar mais jogos: $e');
-    } finally {
-      setState(() {
         isLoadingMore = false;
       });
     }
   }
 
+  void _searchGames(String query) => _fetchGames(query: query, page: 1);
+  void _loadMoreGames() => _fetchGames(query: searchQuery, page: currentPage + 1);
+
   @override
   Widget build(BuildContext context) {
-    switch (statusCode) {
-      case 0:
-        return LoadingScreen();
-      case 200:
-        return TimelineScreen(
-          games: games,
-          onRefresh: fetchGames,
-          onSearch: searchGames,
-          isLoading: isLoading,
-          searchQuery: searchQuery,
-          scrollController: _scrollController,
-          isLoadingMore: isLoadingMore,
-        );
-      case 404:
-      case 401:
-      case 403:
-      case 500:
-        return ErrorScreen(
-          message: 'Erro ao buscar jogos: $statusCode',
-          onRefresh: fetchGames,
-        );
-      default:
-        return ErrorScreen(
-          message: 'Erro inesperado: $statusCode',
-          onRefresh: fetchGames,
-        );
+    if (statusCode == 0) return LoadingScreen();
+
+    if (statusCode == 200) {
+      return TimelineScreen(
+        games: games,
+        onRefresh: () => _fetchGames(query: searchQuery, page: 1),
+        onSearch: _searchGames,
+        isLoading: isLoading,
+        isLoadingMore: isLoadingMore,
+        searchQuery: searchQuery,
+        scrollController: _scrollController,
+      );
     }
+
+    return ErrorScreen(
+      message: 'Erro ao buscar jogos: $statusCode',
+      onRefresh: () => _fetchGames(query: searchQuery, page: 1),
+    );
   }
 
   @override

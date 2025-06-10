@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:games/models/platforms_details.dart';
 import 'package:games/screens/error_screen.dart';
 import 'package:games/screens/loading_screen.dart';
-import 'package:games/screens/platform_screen.dart';
+import 'package:games/screens/platform_screen.dart'; // Certifique-se que esta é a versão atualizada com busca local
 import 'package:games/utils/platform_services.dart';
 
 class PlatformScene extends StatefulWidget {
@@ -94,10 +94,8 @@ class _PlatformSceneState extends State<PlatformScene> {
         return PlatformScreen(
           platforms: platforms,
           onRefresh: fetchPlatforms,
-          onSearch: (_) {}, // Não usado, mas requerido pela tela
           isLoading: isLoading,
           isLoadingMore: isLoadingMore,
-          searchQuery: '', // Ignorado
           scrollController: _scrollController,
         );
       case 404:

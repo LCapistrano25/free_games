@@ -1,28 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:games/models/platforms_details.dart';
 
-class PlatformScreen extends StatelessWidget {
+class PlatformScreen extends StatefulWidget {
   final List<PlatformModel> platforms;
   final VoidCallback onRefresh;
-  final Function(String) onSearch;
   final bool isLoading;
   final bool isLoadingMore;
-  final String searchQuery;
   final ScrollController scrollController;
 
   const PlatformScreen({
     required this.platforms,
     required this.onRefresh,
-    required this.onSearch,
     required this.isLoading,
     required this.isLoadingMore,
-    required this.searchQuery,
     required this.scrollController,
     super.key,
   });
 
   @override
+  State<PlatformScreen> createState() => _PlatformScreenState();
+}
+
+class _PlatformScreenState extends State<PlatformScreen> {
+  String searchQuery = '';
+  late TextEditingController searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    searchController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  List<PlatformModel> get filteredPlatforms {
+    if (searchQuery.isEmpty) return widget.platforms;
+    return widget.platforms
+        .where((p) => p.name.toLowerCase().contains(searchQuery.toLowerCase()))
+        .toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final platforms = filteredPlatforms;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Plataformas')),
       body: Column(
@@ -30,28 +55,24 @@ class PlatformScreen extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
-              controller: TextEditingController(text: searchQuery),
+              controller: searchController,
               decoration: const InputDecoration(
                 labelText: 'Buscar plataforma',
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
-              onSubmitted: onSearch,
+              onChanged: (value) {
+                setState(() => searchQuery = value);
+              },
             ),
           ),
           Expanded(
-            child: isLoading
+            child: widget.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : GridView.builder(
-                    controller: scrollController,
+                : ListView.builder(
+                    controller: widget.scrollController,
                     padding: const EdgeInsets.all(8.0),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 3 / 4,
-                    ),
-                    itemCount: platforms.length + (isLoadingMore ? 1 : 0),
+                    itemCount: platforms.length + (widget.isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index >= platforms.length) {
                         return const Center(child: CircularProgressIndicator());
@@ -65,9 +86,9 @@ class PlatformScreen extends StatelessWidget {
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
+                        margin: const EdgeInsets.symmetric(vertical: 8),
                         child: InkWell(
                           onTap: () {
-                            // Exemplo: ir para página com lista completa de jogos da plataforma
                             Navigator.pushNamed(
                               context,
                               '/platform_details',
@@ -83,57 +104,55 @@ class PlatformScreen extends StatelessWidget {
                                     ? Image.network(
                                         platform.imageBackground,
                                         width: double.infinity,
-                                        height: 160,
+                                        height: 180,
                                         fit: BoxFit.cover,
                                       )
                                     : Container(
                                         width: double.infinity,
-                                        height: 160,
+                                        height: 180,
                                         color: Colors.grey[300],
                                         child: const Icon(Icons.image_not_supported),
                                       ),
                               ),
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(10.0),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        platform.name,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
+                              Padding(
+                                padding: const EdgeInsets.all(10.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      platform.name,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        'Jogos: ${platform.gamesCount}',
-                                        style: const TextStyle(fontSize: 13),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Wrap(
-                                        spacing: 6,
-                                        runSpacing: -4,
-                                        children: popularGames.map((game) {
-                                          return Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: Colors.grey[200],
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                            child: Text(
-                                              game.name,
-                                              style: const TextStyle(fontSize: 11),
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ),
-                                    ],
-                                  ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      'Jogos: ${platform.gamesCount}',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: -4,
+                                      children: popularGames.map((game) {
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[200],
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text(
+                                            game.name,
+                                            style: const TextStyle(fontSize: 12),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -146,7 +165,7 @@ class PlatformScreen extends StatelessWidget {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: onRefresh,
+        onPressed: widget.onRefresh,
         child: const Icon(Icons.refresh),
       ),
     );
