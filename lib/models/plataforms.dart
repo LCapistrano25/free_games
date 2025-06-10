@@ -3,13 +3,21 @@ class PlatformInfo {
   final String name;
   final String slug;
 
-  PlatformInfo({required this.id, required this.name, required this.slug});
+  PlatformInfo({
+    required this.id,
+    required this.name,
+    required this.slug,
+  });
 
-  factory PlatformInfo.fromJson(Map<String, dynamic> json) {
+  factory PlatformInfo.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return PlatformInfo(id: 0, name: 'Desconhecido', slug: '');
+    }
+
     return PlatformInfo(
-      id: json['id'],
-      name: json['name'],
-      slug: json['slug'],
+      id: json['id'] ?? 0,
+      name: json['name'] ?? 'Desconhecido',
+      slug: json['slug'] ?? '',
     );
   }
 }
@@ -18,7 +26,10 @@ class Requirements {
   final String? minimum;
   final String? recommended;
 
-  Requirements({this.minimum, this.recommended});
+  Requirements({
+    this.minimum,
+    this.recommended,
+  });
 
   factory Requirements.fromJson(Map<String, dynamic>? json) {
     if (json == null) return Requirements();
@@ -40,7 +51,15 @@ class GamePlatform {
     required this.requirements,
   });
 
-  factory GamePlatform.fromJson(Map<String, dynamic> json) {
+  factory GamePlatform.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return GamePlatform(
+        platform: PlatformInfo(id: 0, name: 'Desconhecido', slug: ''),
+        releasedAt: null,
+        requirements: Requirements(),
+      );
+    }
+
     return GamePlatform(
       platform: PlatformInfo.fromJson(json['platform']),
       releasedAt: json['released_at'],

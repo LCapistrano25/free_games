@@ -17,6 +17,12 @@ class GamesServices {
       },
     );
 
-    return [response.data ?? [], response.statusCode];
+    print(response.data);
+    print(response.statusCode);
+
+    return [
+      response.data ?? [],
+      response.statusCode // 👈 CORRIGIDO AQUI
+    ];
   }
 }

@@ -66,61 +66,77 @@ class Games {
     required this.esrbRating,
   });
 
-  factory Games.fromJson(Map<String, dynamic> json) {
-    List<Ratings> ratings = (json['ratings'] as List? ?? [])
-        .map((i) => Ratings.fromJson(i))
-        .toList();
-
-    List<GamePlatform> platforms = (json['platforms'] as List? ?? [])
-        .map((p) => GamePlatform.fromJson(p))
-        .toList();
-
-    List<GameStore> stores = (json['stores'] as List? ?? [])
-        .map((s) => GameStore.fromJson(s))
-        .toList();
-
-    List<Genre> genres = (json['genres'] as List? ?? [])
-        .map((g) => Genre.fromJson(g))
-        .toList();
-
-    List<Tag> tags = (json['tags'] as List? ?? [])
-        .map((t) => Tag.fromJson(t))
-        .toList();
-
-    List<Screenshot> screenshots = (json['short_screenshots'] as List? ?? [])
-        .map((s) => Screenshot.fromJson(s))
-        .toList();
-
-    EsrbRating? esrb = json['esrb_rating'] != null
-        ? EsrbRating.fromJson(json['esrb_rating'])
-        : null;
+  factory Games.fromJson(Map<String, dynamic>? json) {
+    if (json == null) {
+      return Games(
+        id: 0,
+        slug: '',
+        name: 'Desconhecido',
+        released: null,
+        tba: false,
+        backgroundImage: null,
+        updated: '',
+        userGame: null,
+        rating: 0,
+        ratingTop: 0,
+        ratings: [],
+        ratingsCount: 0,
+        reviewsCount: 0,
+        reviewsTextCount: 0,
+        added: 0,
+        addedByStatus: {},
+        metacritic: null,
+        playtime: 0,
+        suggestionsCount: 0,
+        platforms: [],
+        stores: [],
+        genres: [],
+        tags: [],
+        screenshots: [],
+        esrbRating: null,
+      );
+    }
 
     return Games(
       id: json['id'] ?? 0,
       slug: json['slug'] ?? '',
-      name: json['name'] ?? '',
+      name: json['name'] ?? 'Desconhecido',
       released: json['released'],
       tba: json['tba'] ?? false,
       backgroundImage: json['background_image'],
+      updated: json['updated'] ?? '',
+      userGame: json['user_game']?.toString(),
       rating: json['rating'] ?? 0,
       ratingTop: json['rating_top'] ?? 0,
-      ratings: ratings,
+      ratings: (json['ratings'] as List? ?? [])
+          .map((i) => Ratings.fromJson(i))
+          .toList(),
       ratingsCount: json['ratings_count'] ?? 0,
+      reviewsCount: json['reviews_count'] ?? 0,
       reviewsTextCount: json['reviews_text_count'] ?? 0,
       added: json['added'] ?? 0,
-      addedByStatus: json['added_by_status'],
+      addedByStatus: json['added_by_status'] as Map<String, dynamic>?,
       metacritic: json['metacritic']?.toString(),
       playtime: json['playtime'] ?? 0,
       suggestionsCount: json['suggestions_count'] ?? 0,
-      updated: json['updated'] ?? '',
-      userGame: json['user_game']?.toString(),
-      reviewsCount: json['reviews_count'] ?? 0,
-      platforms: platforms,
-      stores: stores,
-      genres: genres,
-      tags: tags,
-      screenshots: screenshots,
-      esrbRating: esrb,
+      platforms: (json['platforms'] as List? ?? [])
+          .map((p) => GamePlatform.fromJson(p))
+          .toList(),
+      stores: (json['stores'] as List? ?? [])
+          .map((s) => GameStore.fromJson(s))
+          .toList(),
+      genres: (json['genres'] as List? ?? [])
+          .map((g) => Genre.fromJson(g))
+          .toList(),
+      tags: (json['tags'] as List? ?? [])
+          .map((t) => Tag.fromJson(t))
+          .toList(),
+      screenshots: (json['short_screenshots'] as List? ?? [])
+          .map((s) => Screenshot.fromJson(s))
+          .toList(),
+      esrbRating: json['esrb_rating'] != null
+          ? EsrbRating.fromJson(json['esrb_rating'])
+          : null,
     );
   }
 }

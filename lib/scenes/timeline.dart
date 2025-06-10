@@ -39,13 +39,23 @@ class _TimelineSceneState extends State<TimelineScene> {
       currentPage = 1;
     });
 
-    var response = await GamesServices.fetchData(apiKey!, pageSize: 20, page: 1);
-
-    setState(() {
-      games = response[0] as List<Games>;
-      statusCode = response[1] as int;
-      isLoading = false;
-    });
+    try {
+      var response = await GamesServices.fetchData(apiKey!, pageSize: 20, page: 1);
+      setState(() {
+        games = response[0] as List<Games>;
+        statusCode = (response.length > 1 && response[1] is int) ? response[1] as int : 500;
+      });
+    } catch (e) {
+      debugPrint('Erro ao buscar jogos: $e');
+      setState(() {
+        games = [];
+        statusCode = 500;
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   void searchGames(String query) async {
@@ -55,13 +65,23 @@ class _TimelineSceneState extends State<TimelineScene> {
       currentPage = 1;
     });
 
-    var response = await GamesServices.fetchData(apiKey!, pageSize: 20, query: query, page: 1);
-
-    setState(() {
-      games = response[0] as List<Games>;
-      statusCode = response[1] as int;
-      isLoading = false;
-    });
+    try {
+      var response = await GamesServices.fetchData(apiKey!, pageSize: 20, query: query, page: 1);
+      setState(() {
+        games = response[0] as List<Games>;
+        statusCode = (response.length > 1 && response[1] is int) ? response[1] as int : 500;
+      });
+    } catch (e) {
+      debugPrint('Erro na busca: $e');
+      setState(() {
+        games = [];
+        statusCode = 500;
+      });
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   void loadMoreGames() async {
@@ -71,23 +91,29 @@ class _TimelineSceneState extends State<TimelineScene> {
 
     int nextPage = currentPage + 1;
 
-    var response = await GamesServices.fetchData(
-      apiKey!,
-      pageSize: 20,
-      query: searchQuery,
-      page: nextPage,
-    );
+    try {
+      var response = await GamesServices.fetchData(
+        apiKey!,
+        pageSize: 20,
+        query: searchQuery,
+        page: nextPage,
+      );
 
-    if (response[1] == 200) {
+      final int responseCode = (response.length > 1 && response[1] is int) ? response[1] as int : 500;
+
+      if (responseCode == 200) {
+        setState(() {
+          games.addAll(response[0] as List<Games>);
+          currentPage = nextPage;
+        });
+      }
+    } catch (e) {
+      debugPrint('Erro ao carregar mais jogos: $e');
+    } finally {
       setState(() {
-        games.addAll(response[0] as List<Games>);
-        currentPage = nextPage;
+        isLoadingMore = false;
       });
     }
-
-    setState(() {
-      isLoadingMore = false;
-    });
   }
 
   @override
@@ -95,7 +121,6 @@ class _TimelineSceneState extends State<TimelineScene> {
     switch (statusCode) {
       case 0:
         return LoadingScreen();
-
       case 200:
         return TimelineScreen(
           games: games,
@@ -106,15 +131,14 @@ class _TimelineSceneState extends State<TimelineScene> {
           scrollController: _scrollController,
           isLoadingMore: isLoadingMore,
         );
-
       case 404:
       case 401:
       case 403:
+      case 500:
         return ErrorScreen(
           message: 'Erro ao buscar jogos: $statusCode',
           onRefresh: fetchGames,
         );
-
       default:
         return ErrorScreen(
           message: 'Erro inesperado: $statusCode',
@@ -122,7 +146,6 @@ class _TimelineSceneState extends State<TimelineScene> {
         );
     }
   }
-
 
   @override
   void dispose() {
