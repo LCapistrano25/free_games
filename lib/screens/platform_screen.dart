@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:games/components/app_routers.dart';
 import 'package:games/models/platforms_details.dart';
 
 class PlatformScreen extends StatefulWidget {
@@ -49,73 +50,96 @@ class _PlatformScreenState extends State<PlatformScreen> {
     final platforms = filteredPlatforms;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Plataformas')),
+      appBar: AppBar(
+        title: const Text('Plataformas'),
+        elevation: 0,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        centerTitle: true,
+        actions: [
+        IconButton(
+          icon: const Icon(Icons.logout),
+          tooltip: 'Sair',
+          onPressed: () {
+            Navigator.pushReplacementNamed(context, '/');
+          },
+        ),
+      ],
+      ),
+      backgroundColor: const Color(0xFFF5F8FA), // Fundo suave
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(8.0),
+            padding: const EdgeInsets.all(12.0),
             child: TextField(
               controller: searchController,
-              decoration: const InputDecoration(
-                labelText: 'Buscar plataforma',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: 'Buscar plataforma',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
               ),
-              onChanged: (value) {
-                setState(() => searchQuery = value);
-              },
+              onChanged: (value) => setState(() => searchQuery = value),
             ),
           ),
           Expanded(
             child: widget.isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : ListView.builder(
+                : platforms.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Nenhuma plataforma encontrada.',
+                        style: TextStyle(fontSize: 16, color: Colors.black54),
+                      ),
+                    )
+                : ListView.separated(
                     controller: widget.scrollController,
-                    padding: const EdgeInsets.all(8.0),
                     itemCount: platforms.length + (widget.isLoadingMore ? 1 : 0),
+                    separatorBuilder: (_, __) => const Divider(height: 0),
                     itemBuilder: (context, index) {
                       if (index >= platforms.length) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        );
                       }
 
                       final platform = platforms[index];
                       final popularGames = platform.games.take(2).toList();
 
-                      return Card(
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.pushNamed(
-                              context,
-                              '/platform_details',
-                              arguments: platform,
-                            );
-                          },
-                          child: Column(
+                      return InkWell(
+                        onTap: () {
+                          Navigator.pushNamed(context, AppRoutes.platformDetails, arguments: platform);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          color: Colors.white,
+                          child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ClipRRect(
-                                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                                borderRadius: BorderRadius.circular(12),
                                 child: platform.imageBackground.isNotEmpty
                                     ? Image.network(
                                         platform.imageBackground,
-                                        width: double.infinity,
-                                        height: 180,
+                                        width: 80,
+                                        height: 80,
                                         fit: BoxFit.cover,
                                       )
                                     : Container(
-                                        width: double.infinity,
-                                        height: 180,
+                                        width: 80,
+                                        height: 80,
                                         color: Colors.grey[300],
-                                        child: const Icon(Icons.image_not_supported),
+                                        child: const Icon(Icons.image, size: 40),
                                       ),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.all(10.0),
+                              const SizedBox(width: 12),
+                              Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -123,15 +147,13 @@ class _PlatformScreenState extends State<PlatformScreen> {
                                       platform.name,
                                       style: const TextStyle(
                                         fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                        fontWeight: FontWeight.w600,
                                       ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
                                     ),
                                     const SizedBox(height: 6),
                                     Text(
                                       'Jogos: ${platform.gamesCount}',
-                                      style: const TextStyle(fontSize: 14),
+                                      style: const TextStyle(color: Colors.black54, fontSize: 13),
                                     ),
                                     const SizedBox(height: 6),
                                     Wrap(
@@ -139,10 +161,10 @@ class _PlatformScreenState extends State<PlatformScreen> {
                                       runSpacing: -4,
                                       children: popularGames.map((game) {
                                         return Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                           decoration: BoxDecoration(
-                                            color: Colors.grey[200],
-                                            borderRadius: BorderRadius.circular(10),
+                                            color: const Color(0xFFE1E8ED),
+                                            borderRadius: BorderRadius.circular(20),
                                           ),
                                           child: Text(
                                             game.name,

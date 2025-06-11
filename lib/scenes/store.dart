@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:games/models/games.dart';
+import 'package:games/models/store_details.dart';
 import 'package:games/screens/error_screen.dart';
 import 'package:games/screens/loading_screen.dart';
-import 'package:games/screens/timeline_screen.dart';
-import 'package:games/utils/games_services.dart';
+import 'package:games/screens/store_screen.dart';
+import 'package:games/utils/store_services.dart';
 
-class TimelineScene extends StatefulWidget {
+class StoreScene extends StatefulWidget {
+  const StoreScene({super.key});
+
   @override
-  _TimelineSceneState createState() => _TimelineSceneState();
+  State<StoreScene> createState() => _StoreSceneState();
 }
 
-class _TimelineSceneState extends State<TimelineScene> {
+class _StoreSceneState extends State<StoreScene> {
   final String? apiKey = 'aa70995cc7274ac099fb0dce4eb4f1e7';
   final ScrollController _scrollController = ScrollController();
 
@@ -19,41 +21,40 @@ class _TimelineSceneState extends State<TimelineScene> {
   int totalCount = 0;
   bool isLoading = false;
   bool isLoadingMore = false;
-  String searchQuery = '';
-  List<Games> games = [];
+  List<StoreModel> stores = [];
 
   @override
   void initState() {
     super.initState();
-    _fetchGames();
+    _fetchStores();
     _scrollController.addListener(_handleScroll);
   }
 
   void _handleScroll() {
-    final reachedEnd = _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200;
-    final hasMore = games.length < totalCount;
+    final isNearBottom = _scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200;
 
-    if (reachedEnd && !isLoadingMore && hasMore) {
-      _loadMoreGames();
+    final hasMoreToLoad = stores.length < totalCount;
+
+    if (isNearBottom && !isLoadingMore && hasMoreToLoad) {
+      _loadMoreStores();
     }
   }
 
-  Future<void> _fetchGames({String query = '', int page = 1}) async {
-    final isNewSearch = page == 1;
+  Future<void> _fetchStores({int page = 1}) async {
+    final isNewLoad = page == 1;
 
     setState(() {
-      if (isNewSearch) {
+      if (isNewLoad) {
         isLoading = true;
         currentPage = 1;
-        searchQuery = query;
       } else {
         isLoadingMore = true;
       }
     });
 
     try {
-      final response = await GamesServices.fetchData(apiKey!, pageSize: 20, query: query, page: page);
-      final List<Games> fetchedGames = response[0] as List<Games>;
+      final response = await StoreServices.fetchStores(apiKey!, pageSize: 5, page: page); // 5 por página, por exemplo
       final int code = response[1] as int;
       final int count = response[2] as int;
 
@@ -62,20 +63,21 @@ class _TimelineSceneState extends State<TimelineScene> {
         totalCount = count;
 
         if (code == 200) {
-          if (isNewSearch) {
-            games = fetchedGames;
+          final newStores = response[0] as List<StoreModel>;
+          if (isNewLoad) {
+            stores = newStores;
           } else {
-            games.addAll(fetchedGames);
+            stores.addAll(newStores);
             currentPage = page;
           }
         } else {
-          games = [];
+          stores = [];
         }
       });
     } catch (e) {
-      debugPrint('Erro ao buscar jogos: $e');
+      debugPrint('Erro ao buscar lojas: $e');
       setState(() {
-        games = [];
+        stores = [];
         statusCode = 500;
       });
     } finally {
@@ -86,29 +88,26 @@ class _TimelineSceneState extends State<TimelineScene> {
     }
   }
 
-  void _searchGames(String query) => _fetchGames(query: query, page: 1);
-  void _loadMoreGames() => _fetchGames(query: searchQuery, page: currentPage + 1);
+  void _loadMoreStores() => _fetchStores(page: currentPage + 1);
 
   @override
   Widget build(BuildContext context) {
     if (statusCode == 0) return const LoadingScreen();
 
     if (statusCode == 200) {
-      return TimelineScreen(
-        games: games,
-        onRefresh: () => _fetchGames(query: searchQuery, page: 1),
-        onSearch: _searchGames,
+      return StoreScreen(
+        stores: stores,
+        onRefresh: () => _fetchStores(page: 1),
         isLoading: isLoading,
         isLoadingMore: isLoadingMore,
-        searchQuery: searchQuery,
         scrollController: _scrollController,
       );
     }
 
     return ErrorScreen(
-      title: 'Jogos',
+      title: 'Lojas',
       message: 'Algo deu ruim… mas já tentou desligar e ligar de novo? Brincadeira! Clique no botão e vamos tentar novamente como se nada tivesse acontecido!',
-      onRefresh: () => _fetchGames(query: searchQuery, page: 1),
+      onRefresh: () => _fetchStores(page: 1),
     );
   }
 

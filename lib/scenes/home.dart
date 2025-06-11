@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:games/scenes/platforms.dart';
 import 'package:games/scenes/timeline.dart';
+import 'package:games/scenes/store.dart';
 
 // Adicione mais telas se quiser
 
@@ -16,7 +17,8 @@ class _HomeScaffoldState extends State<HomeScaffold> {
 
   final List<Widget> _screens =  [
     TimelineScene(),
-    PlatformScene()
+    PlatformScene(),
+    StoreScene(),
     // Adicione aqui, ex: FavoritesScene()
   ];
 
@@ -44,6 +46,10 @@ class _HomeScaffoldState extends State<HomeScaffold> {
           BottomNavigationBarItem(
             icon: Icon(Icons.devices),
             label: 'Plataformas',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.store),
+            label: 'Loja',
           ),
         ],
       ),
